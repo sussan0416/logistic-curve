@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ロジスティック関数 パラメータ可視化</title>
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
     :root { --pad: 16px; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans JP", sans-serif; margin: 0; }
     header { padding: var(--pad); border-bottom: 1px solid #e5e5e5; }
@@ -131,7 +132,7 @@
     </section>
 
     <section class="panel" aria-label="plot">
-      <canvas id="cv" width="1200" height="650"></canvas>
+      <canvas id="cv"></canvas>
       <div class="hint" style="margin-top:10px;">
         グラフ上の破線：<span class="mono">x=M</span>（中心）と <span class="mono">y=A</span>, <span class="mono">y=K</span>（漸近線）。
       </div>
@@ -177,7 +178,22 @@
     const cv = document.getElementById("cv");
     const ctx = cv.getContext("2d");
 
+    function resizeCanvasToDisplaySize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = cv.getBoundingClientRect();
+      const w = Math.round(rect.width * dpr);
+      const h = Math.round(rect.height * dpr);
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
     function draw() {
+      resizeCanvasToDisplaySize();
+      const cssW = cv.getBoundingClientRect().width;
+      const cssH = cv.getBoundingClientRect().height;
       const A = parseFloat(els.A.value);
       const K = parseFloat(els.K.value);
       const B = parseFloat(els.B.value);
@@ -199,7 +215,7 @@
 
       // padding
       const padL = 70, padR = 20, padT = 20, padB = 55;
-      const W = cv.width, H = cv.height;
+      const W = cssW, H = cssH;
       const plotW = W - padL - padR;
       const plotH = H - padT - padB;
 
@@ -207,7 +223,10 @@
       const yToPx = (y) => padT + (yMax - y) / (yMax - yMin) * plotH;
 
       // clear
-      ctx.clearRect(0,0,W,H);
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ctx.restore();
 
       // axes
       ctx.lineWidth = 1;
@@ -385,7 +404,6 @@
     els.presetReverse.addEventListener("click", () => setParams({A:0, K:1, B:-3, M:0, xmin:-6, xmax:6, points:500}));
     els.presetWide.addEventListener("click", () => setParams({A:-1, K:2, B:0.8, M:1.5, xmin:-10, xmax:10, points:700}));
 
-    // redraw on resize for crispness (canvas size fixed; but still ok)
     window.addEventListener("resize", draw);
   </script>
 </body>
